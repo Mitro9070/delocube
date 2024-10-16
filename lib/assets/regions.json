@@ -1,0 +1,44 @@
+{
+  "regions": [
+    {
+      "name": "Москва",
+      "latitude": 55.7558,
+      "longitude": 37.6173
+    },
+    {
+      "name": "Moscow",
+      "latitude": 55.7558,
+      "longitude": 37.6173
+    },
+    {
+      "name": "Московская область",
+      "latitude": 55.751244,
+      "longitude": 37.618423
+    },
+    {
+      "name": "Санкт-Петербург",
+      "latitude": 59.9343,
+      "longitude": 30.3351
+    },
+    {
+      "name": "Ленинградская область",
+      "latitude": 59.9343,
+      "longitude": 30.3351
+    },
+    {
+      "name": "Новосибирская область",
+      "latitude": 55.0084,
+      "longitude": 82.9357
+    },
+    {
+      "name": "Novosibirsk",
+      "latitude": 55.0084,
+      "longitude": 82.9357
+    },
+    {
+      "name": "Одинцово",
+      "latitude": 55.6780,
+      "longitude": 37.2635
+    }
+  ]
+}

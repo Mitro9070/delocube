@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "867992866453",
+    "project_id": "delocube-6ecbc",
+    "storage_bucket": "delocube-6ecbc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:867992866453:android:930f20319959fff5ac159c",
+        "android_client_info": {
+          "package_name": "com.example.delocube"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzFsCW-_Uc-tfuX-AMS2RYoi45jSY9KtY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
