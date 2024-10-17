@@ -6,6 +6,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'search_screen.dart'; // Импортируем экран поиска
+import 'capsule_list_screen.dart'; // Импортируем экран списка капсул
 import '../widgets/menu_drawer.dart'; // Импортируем виджет бокового меню
 import '../widgets/top_search_bar.dart'; // Импортируем верхнюю панель
 import '../widgets/bottom_navigation_bar.dart'; // Импортируем нижнюю панель
@@ -204,11 +205,30 @@ class _HomeScreenState extends State<HomeScreen> {
             child: BottomNavBar(
               currentIndex: 0,
               onTap: (index) {
+                if (index == 1) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CapsuleListScreen()),
+                  );
+                }
                 // Добавьте логику для обработки нажатий на элементы нижней панели
               },
             ),
           ),
         ],
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 56.0), // 3 пикселя выше нижней панели
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CapsuleListScreen()),
+            );
+          },
+          child: Icon(Icons.list),
+          backgroundColor: Colors.blue,
+        ),
       ),
     );
   }

@@ -23,6 +23,12 @@ class _TopSearchBarState extends State<TopSearchBar> {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        IconButton(
+          icon: Icon(Icons.menu),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
+        ),
         Expanded(
           child: Autocomplete<String>(
             optionsBuilder: (TextEditingValue textEditingValue) {
