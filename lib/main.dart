@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Импорт для инициализации локализации
 import 'screens/splash_screen.dart';
 import 'screens/storytelling_screen.dart';
@@ -14,6 +15,9 @@ import 'models/capsule_model.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.safetyNet,
+  );
   await initializeDateFormatting('ru_RU', null); // Инициализация локализации
   runApp(MyApp());
 }

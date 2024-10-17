@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "867992866453",
+    "firebase_url": "https://delocube-6ecbc-default-rtdb.asia-southeast1.firebasedatabase.app", // Добавьте эту строку
     "project_id": "delocube-6ecbc",
     "storage_bucket": "delocube-6ecbc.appspot.com"
   },

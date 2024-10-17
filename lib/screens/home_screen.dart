@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'search_screen.dart'; // Импортируем экран поиска
 import '../widgets/menu_drawer.dart'; // Импортируем виджет бокового меню
+import '../widgets/top_search_bar.dart'; // Импортируем верхнюю панель
+import '../widgets/bottom_navigation_bar.dart'; // Импортируем нижнюю панель
 import '../models/capsule_model.dart'; // Импортируем модель капсулы
 
 class HomeScreen extends StatefulWidget {
@@ -26,11 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _selectedLocations = [];
   List<Capsule> _capsules = [];
+  bool _isLoading = false;
+  BitmapDescriptor? _customIcon;
 
   @override
   void initState() {
     super.initState();
     _initializeFirebase();
+    _loadCustomIcon();
     _loadRegions();
     _getCurrentLocation();
     _loadCapsules();
@@ -40,9 +45,16 @@ class _HomeScreenState extends State<HomeScreen> {
     await Firebase.initializeApp();
   }
 
+  Future<void> _loadCustomIcon() async {
+    _customIcon = await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(size: Size(48, 48)),
+      'lib/assets/home_icon.png',
+    );
+  }
+
   Future<void> _loadRegions() async {
     try {
-      final String response = await rootBundle.loadString('assets/regions.json');
+      final String response = await rootBundle.loadString('lib/assets/regions.json');
       final data = await json.decode(response);
       setState(() {
         _regions = List<Map<String, dynamic>>.from(data['regions']);
@@ -96,11 +108,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _loadCapsules() async {
-    DatabaseReference capsulesRef = FirebaseDatabase.instance.ref().child('Capsules');
-    capsulesRef.once().then((DatabaseEvent event) {
+  Future<void> _loadCapsules() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Обновите URL базы данных на правильный
+    DatabaseReference capsulesRef = FirebaseDatabase.instance.refFromURL('https://delocube-6ecbc-default-rtdb.asia-southeast1.firebasedatabase.app').child('Capsules');
+    DatabaseEvent event = await capsulesRef.once();
+    final data = event.snapshot.value as Map<dynamic, dynamic>?;
+
+    if (data != null) {
       List<Capsule> capsules = [];
-      Map<String, dynamic> data = Map<String, dynamic>.from(event.snapshot.value as Map);
       data.forEach((key, value) {
         capsules.add(Capsule.fromMap(key, Map<String, dynamic>.from(value)));
       });
@@ -108,8 +127,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _capsules = capsules;
         print('Capsules loaded: $_capsules');
       });
-    }).catchError((error) {
-      print('Error loading capsules: $error');
+    } else {
+      print('No capsules found in the database.');
+    }
+
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -140,62 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return _regions.map((region) => region['name'] as String).where((String option) {
-                    return option.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
-                  });
-                },
-                onSelected: (String selection) {
-                  setState(() {
-                    _selectedLocations.add(selection);
-                    _searchController.text = _selectedLocations.join(', ');
-                    _searchRegion(selection);
-                  });
-                },
-                fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                  return TextField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      hintText: 'Куда?',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                    ),
-                  );
-                },
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SearchScreen()),
-                );
-              },
-            ),
-          ],
+        title: TopSearchBar(
+          searchController: _searchController,
+          onSearch: (query) => _searchRegion(query),
+          regions: _regions,
         ),
         backgroundColor: Colors.blue,
       ),
@@ -216,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
               return Marker(
                 markerId: MarkerId(capsule.id),
                 position: LatLng(capsule.latitude, capsule.longitude),
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                icon: _customIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
                 infoWindow: InfoWindow(
                   title: capsule.name,
                   snippet: capsule.address,
@@ -226,28 +197,12 @@ class _HomeScreenState extends State<HomeScreen> {
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
           ),
+          if (_isLoading)
+            Center(child: CircularProgressIndicator()),
           Align(
             alignment: Alignment.bottomCenter,
-            child: BottomNavigationBar(
-              items: [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Поиск',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.favorite),
-                  label: 'Избранное',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.chat),
-                  label: 'Связаться',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Профиль',
-                ),
-              ],
-              type: BottomNavigationBarType.fixed,
+            child: BottomNavBar(
+              currentIndex: 0,
               onTap: (index) {
                 // Добавьте логику для обработки нажатий на элементы нижней панели
               },
