@@ -23,12 +23,6 @@ class _TopSearchBarState extends State<TopSearchBar> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          icon: Icon(Icons.menu),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-        ),
         Expanded(
           child: Autocomplete<String>(
             optionsBuilder: (TextEditingValue textEditingValue) {
@@ -36,10 +30,13 @@ class _TopSearchBarState extends State<TopSearchBar> {
                 return const Iterable<String>.empty();
               }
               return widget.regions.map((region) => region['name'] as String).where((String option) {
-                return option.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
+                return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
               });
             },
-            onSelected: widget.onSearch,
+            onSelected: (String selection) {
+              widget.onSearch(selection);
+              widget.searchController.text = selection;
+            },
             fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
               return TextField(
                 controller: textEditingController,
@@ -55,7 +52,6 @@ class _TopSearchBarState extends State<TopSearchBar> {
                   fillColor: Colors.white,
                   contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                 ),
-                onChanged: widget.onSearch,
               );
             },
           ),

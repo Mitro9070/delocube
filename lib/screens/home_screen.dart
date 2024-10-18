@@ -13,6 +13,8 @@ import '../widgets/bottom_navigation_bar.dart'; // Импортируем ниж
 import '../models/capsule_model.dart'; // Импортируем модель капсулы
 
 class HomeScreen extends StatefulWidget {
+  static const routeName = '/home';
+
   final LatLng? targetLocation;
 
   HomeScreen({this.targetLocation});

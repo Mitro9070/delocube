@@ -25,6 +25,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
     _loadCapsules();
   }
 
+  // Загрузка регионов из локального файла JSON
   Future<void> _loadRegions() async {
     try {
       final String response = await rootBundle.loadString('lib/assets/regions.json');
@@ -38,6 +39,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
     }
   }
 
+  // Загрузка данных о капсулах из Firebase Realtime Database
   Future<void> _loadCapsules() async {
     setState(() {
       _isLoading = true;
@@ -65,6 +67,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
     });
   }
 
+  // Поиск региона по запросу
   void _searchRegion(String query) {
     final List<Map<String, dynamic>> matches = [];
     for (var region in _regions) {
@@ -92,6 +95,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
       ),
       body: Stack(
         children: [
+          // Показать индикатор загрузки, пока данные загружаются
           _isLoading
               ? Center(child: CircularProgressIndicator())
               : ListView.builder(
@@ -119,8 +123,8 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: Image.network(
                             capsule.images.isNotEmpty ? capsule.images[0] : '',
-                            width: 100, // Увеличено на 5 пикселей
-                            height: 100, // Увеличено на 5 пикселей
+                            width: 110, // Увеличено на 5 пикселей
+                            height: 110, // Увеличено на 5 пикселей
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -172,9 +176,10 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
                         ),
                       ],
                     ),
+                    // Позиционирование кнопки "Избранное" в правом верхнем углу
                     Positioned(
-                      top: 1,
-                      right: 1,
+                      top: -10,
+                      right: -10,
                       child: IconButton(
                         icon: Icon(Icons.favorite_border),
                         onPressed: () {
@@ -187,6 +192,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
               );
             },
           ),
+          // Нижняя панель навигации
           Align(
             alignment: Alignment.bottomCenter,
             child: BottomNavBar(
@@ -204,6 +210,7 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
           ),
         ],
       ),
+      // Плавающая кнопка для перехода на экран карты
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 56.0), // 3 пикселя выше нижней панели
         child: FloatingActionButton(
