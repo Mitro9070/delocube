@@ -6,6 +6,7 @@ import '../widgets/top_search_bar.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../models/capsule_model.dart';
 import 'home_screen.dart'; // Импортируем экран карты
+import 'capsule_detail_screen.dart'; // Импортируем экран детальной информации о капсуле
 
 class CapsuleListScreen extends StatefulWidget {
   @override
@@ -102,92 +103,100 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
             itemCount: _capsules.length,
             itemBuilder: (context, index) {
               final capsule = _capsules[index];
-              return Container(
-                margin: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 4.5,
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            capsule.images.isNotEmpty ? capsule.images[0] : '',
-                            width: 110, // Увеличено на 5 пикселей
-                            height: 110, // Увеличено на 5 пикселей
-                            fit: BoxFit.cover,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CapsuleDetailScreen(capsule: capsule)),
+                  );
+                },
+                child: Container(
+                  margin: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 4.5,
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              capsule.images.isNotEmpty ? capsule.images[0] : '',
+                              width: 110, // Увеличено на 5 пикселей
+                              height: 110, // Увеличено на 5 пикселей
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              capsule.name,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w400,
+                          SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                capsule.name,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              capsule.address,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w300,
-                                color: Colors.grey,
+                              SizedBox(height: 8),
+                              Text(
+                                capsule.address,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w300,
+                                  color: Colors.grey,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () {
-                                // Implement booking logic
-                              },
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Забронировать',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,
+                              SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  // Implement booking logic
+                                },
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Забронировать',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 9,
                                       color: Colors.black,
                                     ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    size: 9,
-                                    color: Colors.black,
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // Позиционирование кнопки "Избранное" в правом верхнем углу
-                    Positioned(
-                      top: -10,
-                      right: -10,
-                      child: IconButton(
-                        icon: Icon(Icons.favorite_border),
-                        onPressed: () {
-                          // Implement favorite logic
-                        },
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      // Позиционирование кнопки "Избранное" в правом верхнем углу
+                      Positioned(
+                        top: -10,
+                        right: -10,
+                        child: IconButton(
+                          icon: Icon(Icons.favorite_border),
+                          onPressed: () {
+                            // Implement favorite logic
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

@@ -80,6 +80,8 @@ flutter:
     - lib/assets/Slider/Frame4.png
     - lib/assets/Slider/Frame5.png
     - lib/assets/home_icon.png
+    - lib/assets/map32.png
+    - lib/assets/map2.png
     - lib/assets/user_icon.ico
     - lib/assets/regions.json
 

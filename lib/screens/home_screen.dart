@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCustomIcon() async {
     _customIcon = await BitmapDescriptor.fromAssetImage(
       ImageConfiguration(size: Size(48, 48)),
-      'lib/assets/home_icon.png',
+      'lib/assets/map32.png',
     );
   }
 
