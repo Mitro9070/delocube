@@ -33,12 +33,14 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
   }
 
   void _onImageLoaded() {
-    setState(() {
-      _loadedImages++;
-      if (_loadedImages == widget.capsule.images.length) {
-        _isLoading = false;
-      }
-    });
+    _loadedImages++;
+    if (_loadedImages == widget.capsule.images.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    }
   }
 
   @override
