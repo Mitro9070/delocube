@@ -6,9 +6,12 @@ class FirestoreService {
 
   // Получение данных о капсулах
   Future<List<Capsule>> getCapsules() async {
-    final QuerySnapshot result = await _firestore.collection('capsules').get();
-    return result.docs.map((doc) {
-      return Capsule.fromFirestore(doc.data() as Map<String, dynamic>, doc.id);
+    final QuerySnapshot result = await _firestore.collection('Capsules').get();
+
+    final List<Capsule> capsules = result.docs.map((doc) {
+      return Capsule.fromFirestore(doc);
     }).toList();
+
+    return capsules;
   }
 }

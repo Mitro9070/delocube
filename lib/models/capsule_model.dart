@@ -1,12 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Capsule {
   final String id;
   final String address;
   final List<String> amenities;
   final String area;
   final String beds;
-  final String dailyRate;
+  final int dailyRate;
   final String description;
-  final String hourlyRate;
+  final int hourlyRate;
   final List<String> images;
   final double latitude;
   final double longitude;
@@ -29,39 +31,55 @@ class Capsule {
     required this.reviews,
   });
 
+  // Существующий фабричный конструктор fromMap
   factory Capsule.fromMap(String id, Map<String, dynamic> data) {
     return Capsule(
       id: id,
       address: data['address'] ?? '',
-      amenities: data['amenities'] != null ? (data['amenities'] as String).split(',') : [],
+      amenities: _parseList(data['amenities']),
       area: data['area'] ?? '',
       beds: data['beds'] ?? '',
-      dailyRate: data['dailyRate'] ?? '',
+      dailyRate: _toInt(data['dailyRate']),
       description: data['description'] ?? '',
-      hourlyRate: data['hourlyRate'] ?? '',
-      images: data['images'] != null ? (data['images'] as String).split(',') : [],
-      latitude: double.tryParse(data['latitude'] ?? '') ?? 0.0,
-      longitude: double.tryParse(data['longitude'] ?? '') ?? 0.0,
+      hourlyRate: _toInt(data['hourlyRate']),
+      images: _parseList(data['images']),
+      latitude: _toDouble(data['latitude']),
+      longitude: _toDouble(data['longitude']),
       name: data['name'] ?? '',
-      reviews: data['reviews'] != null ? (data['reviews'] as String).split(',') : [],
+      reviews: _parseList(data['reviews']),
     );
   }
 
-  factory Capsule.fromFirestore(Map<String, dynamic> data, String id) {
-    return Capsule(
-      id: id,
-      address: data['address'] ?? '',
-      amenities: data['amenities'] != null ? (data['amenities'] as String).split(',') : [],
-      area: data['area'] ?? '',
-      beds: data['beds'] ?? '',
-      dailyRate: data['dailyRate'] ?? '',
-      description: data['description'] ?? '',
-      hourlyRate: data['hourlyRate'] ?? '',
-      images: data['images'] != null ? (data['images'] as String).split(',') : [],
-      latitude: double.tryParse(data['latitude'] ?? '') ?? 0.0,
-      longitude: double.tryParse(data['longitude'] ?? '') ?? 0.0,
-      name: data['name'] ?? '',
-      reviews: data['reviews'] != null ? (data['reviews'] as String).split(',') : [],
-    );
+  // Добавляем фабричный конструктор fromFirestore
+  factory Capsule.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Capsule.fromMap(doc.id, data);
+  }
+
+  // Вспомогательные методы
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  static List<String> _parseList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((item) => item.toString()).toList();
+    } else if (value is String) {
+      return value.split(',').map((item) => item.trim()).toList();
+    } else {
+      return [];
+    }
   }
 }

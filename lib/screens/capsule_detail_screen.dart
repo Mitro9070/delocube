@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import '../models/capsule_model.dart';
+import '../widgets/date_picker_screen.dart';
+import '../widgets/guest_picker_screen.dart';
+import 'package:intl/intl.dart';
 
 class CapsuleDetailScreen extends StatefulWidget {
   final Capsule capsule;
@@ -18,10 +23,22 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
   BitmapDescriptor? customIcon;
   int _loadedImages = 0;
 
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _guestsController = TextEditingController();
+  final TextEditingController _hoursController = TextEditingController();
+  String _cost = '';
+  bool _isSingleDateSelected = false;
+
   @override
   void initState() {
     super.initState();
     _loadCustomIcon();
+
+    _hoursController.addListener(() {
+      setState(() {
+        _cost = _calculateCost();
+      });
+    });
   }
 
   Future<void> _loadCustomIcon() async {
@@ -43,6 +60,164 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     }
   }
 
+  void _openDatePicker() async {
+    final selectedDates = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return DatePickerScreen();
+      },
+    );
+
+    if (selectedDates != null) {
+      setState(() {
+        _dateController.text = selectedDates;
+        _cost = _calculateCost();
+        print('Selected Dates: $selectedDates');
+        print('Calculated Cost: $_cost');
+      });
+    }
+  }
+
+  void _selectTime(BuildContext context) async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            alwaysUse24HourFormat: true, // Принудительно 24-часовой формат
+          ),
+          child: Localizations.override(
+            context: context,
+            locale: const Locale('ru', 'RU'), // Установка русской локали
+            child: child,
+          ),
+        );
+      },
+    );
+
+    if (pickedTime != null) {
+      final now = DateTime.now();
+      final DateTime fullTime = DateTime(now.year, now.month, now.day, pickedTime.hour, pickedTime.minute);
+      final String formattedTime = DateFormat('HH:mm', 'ru').format(fullTime);
+      // Используйте formattedTime по необходимости
+    }
+  }
+
+  void _openGuestPicker() async {
+    final selectedGuests = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return GuestPickerScreen();
+      },
+    );
+
+    if (selectedGuests != null) {
+      setState(() {
+        _guestsController.text = selectedGuests;
+      });
+    }
+  }
+
+  String _calculateCost() {
+    if (_dateController.text.isEmpty) return '';
+
+    try {
+      String dateText = _dateController.text;
+      print('Date Text: $dateText');
+
+      // Получаем текущий год
+      int currentYear = DateTime.now().year;
+
+      // 1. Проверяем, является ли это диапазоном дат
+      if (dateText.contains(' - ')) {
+        // Диапазон дат, посуточная оплата
+        final dateRange = dateText.split(' - ');
+        final startDateString = dateRange[0].trim();
+        final endDateString = dateRange[1].trim();
+
+        final startDate = DateFormat('d MMMM', 'ru').parse(startDateString);
+        final endDate = DateFormat('d MMMM', 'ru').parse(endDateString);
+
+        // Добавляем текущий год к дате
+        final startDateWithYear = DateTime(currentYear, startDate.month, startDate.day);
+        final endDateWithYear = DateTime(currentYear, endDate.month, endDate.day);
+
+        final duration = endDateWithYear.difference(startDateWithYear).inDays;
+        if (duration <= 0) return '';
+
+        int dailyRate = widget.capsule.dailyRate;
+        int cost = dailyRate * duration;
+        String rate = '$dailyRate руб./сутки';
+
+        return '$cost руб. / $duration суток, $rate';
+      }
+      // 2. Проверяем, есть ли диапазон времени
+      else if (dateText.contains('с') && dateText.contains('до')) {
+        // Одна дата с диапазоном времени, почасовая оплата
+        // Пример: '17 декабря с 10:00 до 11:00'
+        final parts = dateText.split(' с ');
+        final datePart = parts[0].trim();
+        final timeRange = parts[1].trim();
+
+        final date = DateFormat('d MMMM', 'ru').parse(datePart);
+
+        // Добавляем текущий год к дате
+        final dateWithYear = DateTime(currentYear, date.month, date.day);
+
+        final timeParts = timeRange.split(' до ');
+        var startTimeStr = timeParts[0].trim();
+        var endTimeStr = timeParts[1].trim();
+
+        print('Start Time String: $startTimeStr');
+        print('End Time String: $endTimeStr');
+
+        // Парсим время с использованием формата 'HH:mm'
+        final startTime = DateFormat('HH:mm', 'ru').parse(startTimeStr);
+        final endTime = DateFormat('HH:mm', 'ru').parse(endTimeStr);
+
+        final fullStartDateTime = DateTime(
+            dateWithYear.year, dateWithYear.month, dateWithYear.day, startTime.hour, startTime.minute);
+        final fullEndDateTime = DateTime(
+            dateWithYear.year, dateWithYear.month, dateWithYear.day, endTime.hour, endTime.minute);
+
+        final durationInMinutes = fullEndDateTime.difference(fullStartDateTime).inMinutes;
+        if (durationInMinutes <= 0) return '';
+
+        // Рассчитываем длительность в часах с учетом минут
+        final durationInHours = durationInMinutes / 60;
+
+        int hourlyRate = widget.capsule.hourlyRate;
+        int cost = (hourlyRate * durationInHours).ceil(); // Округляем в большую сторону
+        String rate = '$hourlyRate руб./час';
+
+        return '$cost руб. / ${durationInHours.toStringAsFixed(1)} час${_getHourSuffix(durationInHours)}, $rate';
+      }
+      // 3. Обработка случая, когда выбрана только одна дата без времени
+      else {
+        return 'Пожалуйста, выберите промежуток времени';
+      }
+    } catch (e) {
+      print('Error in _calculateCost: $e');
+      return 'Ошибка расчета стоимости';
+    }
+  }
+
+
+
+  // Помощник для правильного отображения суффикса слова "час"
+  String _getHourSuffix(double hours) {
+    int h = hours.round();
+
+    if (h % 10 == 1 && h % 100 != 11) {
+      return '';
+    } else if (h % 10 >= 2 && h % 10 <= 4 && (h % 100 < 10 || h % 100 >= 20)) {
+      return 'а';
+    } else {
+      return 'ов';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,6 +233,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            // Выравниваем элементы по левому краю
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Stack(
@@ -68,7 +244,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                       enlargeCenterPage: true,
                       enableInfiniteScroll: false,
                       aspectRatio: 16 / 9,
-                      viewportFraction: 0.994, // Уменьшение отступов справа и слева
+                      viewportFraction: 0.994,
                       onPageChanged: (index, reason) {
                         setState(() {
                           _current = index;
@@ -90,11 +266,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                                   return child;
                                 } else {
                                   return Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
-                                          : null,
-                                    ),
+                                    child: CircularProgressIndicator(),
                                   );
                                 }
                               },
@@ -152,7 +324,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
               ),
               SizedBox(height: 16),
               Text(
-                '${widget.capsule.area} кв.м. ${widget.capsule.beds} кровать',
+                '${widget.capsule.area} кв.м., спальных мест - ${widget.capsule.beds}',
                 style: TextStyle(
                   fontFamily: 'Rubik',
                   fontSize: 11,
@@ -161,73 +333,71 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                 ),
               ),
               SizedBox(height: 16),
-              Container(
-                width: 280,
-                height: 40,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(9),
-                  color: Color(0xFFF8F9FB),
+              TextField(
+                controller: _dateController,
+                readOnly: true,
+                onTap: _openDatePicker,
+                decoration: InputDecoration(
+                  labelText: 'Когда',
+                  hintText: 'Указать даты',
+                  filled: true,
+                  fillColor: Color(0xFFF8F9FB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(9),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                 ),
-                child: Center(
+              ),
+              if (_isSingleDateSelected) ...[
+                SizedBox(height: 16),
+                TextField(
+                  controller: _hoursController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Часы',
+                    hintText: 'Указать количество часов',
+                    filled: true,
+                    fillColor: Color(0xFFF8F9FB),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(9),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                  ),
+                ),
+              ],
+              SizedBox(height: 16),
+              TextField(
+                controller: _guestsController,
+                readOnly: true,
+                onTap: _openGuestPicker,
+                decoration: InputDecoration(
+                  labelText: 'Кто',
+                  hintText: 'Добавить гостей',
+                  filled: true,
+                  fillColor: Color(0xFFF8F9FB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(9),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                ),
+              ),
+              if (_cost.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
-                    '9 октября – 10 октября',
+                    _cost,
+                    key: Key('cost_text'),
                     style: TextStyle(
                       fontFamily: 'Rubik',
-                      fontSize: 14,
-                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300,
+                      color: _cost.contains('Пожалуйста') ? Colors.red : Colors.black,
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                width: 280,
-                height: 40,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(9),
-                  color: Color(0xFFF8F9FB),
-                ),
-                child: Center(
-                  child: Text(
-                    '2 взрослых',
-                    style: TextStyle(
-                      fontFamily: 'Rubik',
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                '${widget.capsule.dailyRate} р.',
-                style: TextStyle(
-                  fontFamily: 'Rubik',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                '/ 2 суток',
-                style: TextStyle(
-                  fontFamily: 'Rubik',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: Color(0xFFA5A5A5),
-                ),
-              ),
-              Text(
-                '${widget.capsule.hourlyRate} р./сутки',
-                style: TextStyle(
-                  fontFamily: 'Rubik',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.black,
-                ),
-              ),
               SizedBox(height: 16),
               Row(
                 children: [
@@ -310,7 +480,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
               ),
               SizedBox(height: 8),
               Container(
-                width: MediaQuery.of(context).size.width - 6, // Установка одинаковых отступов
+                width: MediaQuery.of(context).size.width - 6,
                 height: 180,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),

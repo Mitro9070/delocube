@@ -46,7 +46,9 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
       _isLoading = true;
     });
 
-    DatabaseReference capsulesRef = FirebaseDatabase.instance.refFromURL('https://delocube-6ecbc-default-rtdb.asia-southeast1.firebasedatabase.app').child('Capsules');
+    DatabaseReference capsulesRef = FirebaseDatabase.instance
+        .refFromURL('https://delocube-6ecbc-default-rtdb.asia-southeast1.firebasedatabase.app')
+        .child('Capsules');
     DatabaseEvent event = await capsulesRef.once();
     final data = event.snapshot.value as Map<dynamic, dynamic>?;
 
@@ -58,6 +60,13 @@ class _CapsuleListScreenState extends State<CapsuleListScreen> {
       setState(() {
         _capsules = capsules;
         print('Capsules loaded: $_capsules');
+        // Добавляем отладочный вывод для проверки значений
+        _capsules.forEach((capsule) {
+          print('Capsule ID: ${capsule.id}');
+          print('Hourly Rate: ${capsule.hourlyRate}');
+          print('Daily Rate: ${capsule.dailyRate}');
+          print('Address: ${capsule.address}');
+        });
       });
     } else {
       print('No capsules found in the database.');

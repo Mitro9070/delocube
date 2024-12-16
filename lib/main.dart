@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+
+// Импортируем пакеты для локализации
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Импорт для инициализации локализации
 import 'screens/splash_screen.dart';
 import 'screens/storytelling_screen.dart';
@@ -18,7 +21,10 @@ void main() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.safetyNet,
   );
-  await initializeDateFormatting('ru_RU', null); // Инициализация локализации
+
+  // Инициализация локализации для русской локали
+  await initializeDateFormatting('ru_RU', null);
+
   runApp(MyApp());
 }
 
@@ -30,6 +36,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      // Поддержка локализации
+      locale: const Locale('ru'), // Установка локали по умолчанию
+      supportedLocales: [const Locale('ru', 'RU')], // Поддерживаемые локали
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate, // Если используете Cupertino Widgets
+      ],
       initialRoute: '/',
       onGenerateRoute: (settings) {
         if (settings.name == '/feedback') {
