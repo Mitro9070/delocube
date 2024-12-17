@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../utils/cost_calculation.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -36,7 +37,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
 
     _hoursController.addListener(() {
       setState(() {
-        _cost = _calculateCost();
+        _cost = CostCalculation.calculateCost(
+          dateText: _dateController.text,
+          capsule: widget.capsule,
+        );
       });
     });
   }
@@ -71,7 +75,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     if (selectedDates != null) {
       setState(() {
         _dateController.text = selectedDates;
-        _cost = _calculateCost();
+        _cost = CostCalculation.calculateCost(
+          dateText: _dateController.text,
+          capsule: widget.capsule,
+        );
         print('Selected Dates: $selectedDates');
         print('Calculated Cost: $_cost');
       });
@@ -119,104 +126,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     }
   }
 
-  String _calculateCost() {
-    if (_dateController.text.isEmpty) return '';
 
-    try {
-      String dateText = _dateController.text;
-      print('Date Text: $dateText');
-
-      // Получаем текущий год
-      int currentYear = DateTime.now().year;
-
-      // 1. Проверяем, является ли это диапазоном дат
-      if (dateText.contains(' - ')) {
-        // Диапазон дат, посуточная оплата
-        final dateRange = dateText.split(' - ');
-        final startDateString = dateRange[0].trim();
-        final endDateString = dateRange[1].trim();
-
-        final startDate = DateFormat('d MMMM', 'ru').parse(startDateString);
-        final endDate = DateFormat('d MMMM', 'ru').parse(endDateString);
-
-        // Добавляем текущий год к дате
-        final startDateWithYear = DateTime(currentYear, startDate.month, startDate.day);
-        final endDateWithYear = DateTime(currentYear, endDate.month, endDate.day);
-
-        final duration = endDateWithYear.difference(startDateWithYear).inDays;
-        if (duration <= 0) return '';
-
-        int dailyRate = widget.capsule.dailyRate;
-        int cost = dailyRate * duration;
-        String rate = '$dailyRate руб./сутки';
-
-        return '$cost руб. / $duration суток, $rate';
-      }
-      // 2. Проверяем, есть ли диапазон времени
-      else if (dateText.contains('с') && dateText.contains('до')) {
-        // Одна дата с диапазоном времени, почасовая оплата
-        // Пример: '17 декабря с 10:00 до 11:00'
-        final parts = dateText.split(' с ');
-        final datePart = parts[0].trim();
-        final timeRange = parts[1].trim();
-
-        final date = DateFormat('d MMMM', 'ru').parse(datePart);
-
-        // Добавляем текущий год к дате
-        final dateWithYear = DateTime(currentYear, date.month, date.day);
-
-        final timeParts = timeRange.split(' до ');
-        var startTimeStr = timeParts[0].trim();
-        var endTimeStr = timeParts[1].trim();
-
-        print('Start Time String: $startTimeStr');
-        print('End Time String: $endTimeStr');
-
-        // Парсим время с использованием формата 'HH:mm'
-        final startTime = DateFormat('HH:mm', 'ru').parse(startTimeStr);
-        final endTime = DateFormat('HH:mm', 'ru').parse(endTimeStr);
-
-        final fullStartDateTime = DateTime(
-            dateWithYear.year, dateWithYear.month, dateWithYear.day, startTime.hour, startTime.minute);
-        final fullEndDateTime = DateTime(
-            dateWithYear.year, dateWithYear.month, dateWithYear.day, endTime.hour, endTime.minute);
-
-        final durationInMinutes = fullEndDateTime.difference(fullStartDateTime).inMinutes;
-        if (durationInMinutes <= 0) return '';
-
-        // Рассчитываем длительность в часах с учетом минут
-        final durationInHours = durationInMinutes / 60;
-
-        int hourlyRate = widget.capsule.hourlyRate;
-        int cost = (hourlyRate * durationInHours).ceil(); // Округляем в большую сторону
-        String rate = '$hourlyRate руб./час';
-
-        return '$cost руб. / ${durationInHours.toStringAsFixed(1)} час${_getHourSuffix(durationInHours)}, $rate';
-      }
-      // 3. Обработка случая, когда выбрана только одна дата без времени
-      else {
-        return 'Пожалуйста, выберите промежуток времени';
-      }
-    } catch (e) {
-      print('Error in _calculateCost: $e');
-      return 'Ошибка расчета стоимости';
-    }
-  }
-
-
-
-  // Помощник для правильного отображения суффикса слова "час"
-  String _getHourSuffix(double hours) {
-    int h = hours.round();
-
-    if (h % 10 == 1 && h % 100 != 11) {
-      return '';
-    } else if (h % 10 >= 2 && h % 10 <= 4 && (h % 100 < 10 || h % 100 >= 20)) {
-      return 'а';
-    } else {
-      return 'ов';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
